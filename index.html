@@ -424,30 +424,6 @@
     text-transform: none; letter-spacing: 0;
   }
   .backup input[type="file"] { display: none; }
-
-  /* ---- fechar o dia ---- */
-  .close-day {
-    border: 0; border-radius: 18px; padding: 17px; width: 100%;
-    font-family: inherit; font-size: 16.5px; font-weight: 900; letter-spacing: -.01em;
-    color: #fff; background: var(--grad); cursor: pointer;
-    box-shadow: 0 8px 30px rgba(255, 45, 120, .35);
-  }
-  .close-day:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  #byeView {
-    position: fixed; inset: 0; z-index: 80;
-    background: radial-gradient(120% 70% at 50% -10%, var(--bg-glow) 0%, var(--bg) 65%), var(--bg);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 12px; padding: 28px; text-align: center; color: var(--ink);
-  }
-  #byeView[hidden] { display: none; }
-  .bye-art { font-size: 74px; line-height: 1; }
-  .bye-h { font-size: 30px; font-weight: 900; letter-spacing: -.02em; margin: 0; }
-  .bye-p { font-size: 15.5px; font-weight: 700; color: var(--muted); margin: 0; max-width: 300px; line-height: 1.5; }
-  .bye-back {
-    margin-top: 14px; border: 1.5px solid var(--card-edge); background: var(--card);
-    color: var(--muted); border-radius: 999px; padding: 11px 22px;
-    font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
-  }
   footer { text-align: center; font-size: 12px; color: var(--muted); padding-top: 6px; font-weight: 600; }
 </style>
 
@@ -593,15 +569,7 @@
     <button type="button" id="btnExport">Salvar backup</button>
     <label class="filebtn">Restaurar backup<input type="file" id="fileImport" accept=".json,application/json"></label>
   </div>
-  <button type="button" class="close-day" id="btnCloseDay">🌙 Fechar o app e salvar o dia</button>
   <footer>Feito com amor pelo Didi 💝 · com a Rapunzel e a turma da Disney ☀️🐭🎀🐶🐾🦆🍎👠🌹🧜‍♀️📚🪔🍃🐉🐸🏹🌊🐲</footer>
-</div>
-
-<div id="byeView" hidden>
-  <div class="bye-art" aria-hidden="true">🏰✨</div>
-  <h2 class="bye-h display">Dia salvo!</h2>
-  <p class="bye-p">Manda o arquivo do backup pro Didi no WhatsApp pra ele acompanhar 💌<br>Agora é só fechar o app. Bons sonhos! 🌙</p>
-  <button type="button" class="bye-back" id="byeBack">Voltar pro app</button>
 </div>
 
 <div id="hello">
@@ -1479,20 +1447,6 @@
     return Promise.resolve();
   }
   el('btnExport').addEventListener('click', exportBackup);
-
-  /* ---- fechar o dia: backup + despedida ---- */
-  el('btnCloseDay').addEventListener('click', function () {
-    exportBackup().then(function () {
-      el('byeView').hidden = false;
-      window.scrollTo(0, 0);
-      /* Navegador de verdade não deixa página se fechar sozinha;
-         a tela de despedida orienta o gesto de fechar. */
-      try { window.close(); } catch (e) {}
-    });
-  });
-  el('byeBack').addEventListener('click', function () {
-    el('byeView').hidden = true;
-  });
 
   el('fileImport').addEventListener('change', function (ev) {
     var f = ev.target.files && ev.target.files[0];
