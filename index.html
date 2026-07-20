@@ -7,9 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Valentina">
+<meta name="apple-mobile-web-app-title" content="Gastos Disney">
+<meta name="application-name" content="Gastos Disney">
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" type="image/png" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>Valentina nos EUA 🏰</title>
 <style>
   /* Tema único e deliberado: noite de parque — violeta profundo, neon rosa e âmbar */
@@ -422,6 +424,30 @@
     text-transform: none; letter-spacing: 0;
   }
   .backup input[type="file"] { display: none; }
+
+  /* ---- fechar o dia ---- */
+  .close-day {
+    border: 0; border-radius: 18px; padding: 17px; width: 100%;
+    font-family: inherit; font-size: 16.5px; font-weight: 900; letter-spacing: -.01em;
+    color: #fff; background: var(--grad); cursor: pointer;
+    box-shadow: 0 8px 30px rgba(255, 45, 120, .35);
+  }
+  .close-day:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  #byeView {
+    position: fixed; inset: 0; z-index: 80;
+    background: radial-gradient(120% 70% at 50% -10%, var(--bg-glow) 0%, var(--bg) 65%), var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 28px; text-align: center; color: var(--ink);
+  }
+  #byeView[hidden] { display: none; }
+  .bye-art { font-size: 74px; line-height: 1; }
+  .bye-h { font-size: 30px; font-weight: 900; letter-spacing: -.02em; margin: 0; }
+  .bye-p { font-size: 15.5px; font-weight: 700; color: var(--muted); margin: 0; max-width: 300px; line-height: 1.5; }
+  .bye-back {
+    margin-top: 14px; border: 1.5px solid var(--card-edge); background: var(--card);
+    color: var(--muted); border-radius: 999px; padding: 11px 22px;
+    font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+  }
   footer { text-align: center; font-size: 12px; color: var(--muted); padding-top: 6px; font-weight: 600; }
 </style>
 
@@ -567,7 +593,15 @@
     <button type="button" id="btnExport">Salvar backup</button>
     <label class="filebtn">Restaurar backup<input type="file" id="fileImport" accept=".json,application/json"></label>
   </div>
+  <button type="button" class="close-day" id="btnCloseDay">🌙 Fechar o app e salvar o dia</button>
   <footer>Feito com amor pelo Didi 💝 · com a Rapunzel e a turma da Disney ☀️🐭🎀🐶🐾🦆🍎👠🌹🧜‍♀️📚🪔🍃🐉🐸🏹🌊🐲</footer>
+</div>
+
+<div id="byeView" hidden>
+  <div class="bye-art" aria-hidden="true">🏰✨</div>
+  <h2 class="bye-h display">Dia salvo!</h2>
+  <p class="bye-p">Manda o arquivo do backup pro Didi no WhatsApp pra ele acompanhar 💌<br>Agora é só fechar o app. Bons sonhos! 🌙</p>
+  <button type="button" class="bye-back" id="byeBack">Voltar pro app</button>
 </div>
 
 <div id="hello">
@@ -1421,26 +1455,43 @@
   });
 
   /* ---- backup ---- */
-  el('btnExport').addEventListener('click', function () {
+  function exportBackup() {
     var payload = JSON.stringify({
       app: 'valentina-usa', exportedAt: new Date().toISOString(),
       expenses: expenses, config: cfg, characters: IMGS
     }, null, 2);
     var name = 'gastos-valentina-' + todayISO() + '.json';
     /* No iPhone a planilha nativa deixa salvar em Arquivos ou mandar no WhatsApp;
-       o download direto fica como último recurso. */
+       o download direto fica como último recurso. Devolve uma promessa que
+       resolve quando a planilha fecha, pra tela de despedida esperar. */
     var file = null;
     try { file = new File([payload], name, { type: 'application/json' }); } catch (e) {}
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: name }).catch(function () {});
-    } else if (navigator.share) {
-      navigator.share({ title: name, text: payload }).catch(function () {});
-    } else {
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
-      a.download = name;
-      document.body.appendChild(a); a.click(); a.remove();
+      return navigator.share({ files: [file], title: name }).catch(function () {});
     }
+    if (navigator.share) {
+      return navigator.share({ title: name, text: payload }).catch(function () {});
+    }
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    return Promise.resolve();
+  }
+  el('btnExport').addEventListener('click', exportBackup);
+
+  /* ---- fechar o dia: backup + despedida ---- */
+  el('btnCloseDay').addEventListener('click', function () {
+    exportBackup().then(function () {
+      el('byeView').hidden = false;
+      window.scrollTo(0, 0);
+      /* Navegador de verdade não deixa página se fechar sozinha;
+         a tela de despedida orienta o gesto de fechar. */
+      try { window.close(); } catch (e) {}
+    });
+  });
+  el('byeBack').addEventListener('click', function () {
+    el('byeView').hidden = true;
   });
 
   el('fileImport').addEventListener('change', function (ev) {
